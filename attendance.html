@@ -1,0 +1,1157 @@
+{% extends "base.html" %}
+
+{% block title %}Mark Attendance - AI Classroom Attendance System{% endblock %}
+
+{% block page_title %}Mark Classroom Attendance{% endblock %}
+
+{% block page_subtitle %}Automatically identify and record student presence with AI-powered facial recognition{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Left Column - Attendance Methods -->
+    <div class="col-lg-8">
+        <!-- Method Selection Cards -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-0 py-3">
+                <h5 class="mb-0">
+                    <i class="bi bi-camera-video me-2 text-primary"></i>Select Attendance Method
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-4">
+                    <!-- Live Camera Method -->
+                    <div class="col-md-6">
+                        <div class="method-card card border-primary hover-lift h-100">
+                            <div class="card-body text-center p-4">
+                                <div class="method-icon mb-3">
+                                    <i class="bi bi-camera-video display-3 text-primary"></i>
+                                </div>
+                                <h5 class="fw-bold">Live Camera</h5>
+                                <p class="text-muted mb-3">Use your webcam for real-time attendance marking</p>
+                                <ul class="list-unstyled text-start small mb-3">
+                                    <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Real-time processing</li>
+                                    <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Instant results</li>
+                                    <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Best for small groups</li>
+                                </ul>
+                                <button class="btn btn-primary w-100" onclick="showMethod('live')">
+                                    <i class="bi bi-play-circle me-2"></i>Start Live Session
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Upload Image Method -->
+                    <div class="col-md-6">
+                        <div class="method-card card border-success hover-lift h-100">
+                            <div class="card-body text-center p-4">
+                                <div class="method-icon mb-3">
+                                    <i class="bi bi-cloud-upload display-3 text-success"></i>
+                                </div>
+                                <h5 class="fw-bold">Upload Photo</h5>
+                                <p class="text-muted mb-3">Upload a classroom photo for batch processing</p>
+                                <ul class="list-unstyled text-start small mb-3">
+                                    <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Process entire class</li>
+                                    <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Higher accuracy</li>
+                                    <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Best for large groups</li>
+                                </ul>
+                                <button class="btn btn-success w-100" onclick="showMethod('upload')">
+                                    <i class="bi bi-cloud-arrow-up me-2"></i>Upload Classroom Photo
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Camera Section -->
+        <div class="method-section d-none" id="liveSection">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="bi bi-camera-video me-2"></i>Live Camera Attendance
+                        </h5>
+                        <span class="badge bg-light text-primary pulse">
+                            <i class="bi bi-circle-fill me-1"></i>LIVE
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-8">
+                            <!-- Camera Feed -->
+                            <div class="camera-container mb-4" id="cameraContainer">
+                                <div class="camera-placeholder" id="cameraPlaceholder">
+                                    <i class="bi bi-camera-video display-1 text-muted"></i>
+                                    <p class="mt-2">Camera feed will appear here</p>
+                                    <small class="text-muted d-block mt-2">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        Camera access requires HTTPS or localhost
+                                    </small>
+                                </div>
+                                <video id="liveVideo" class="d-none" autoplay muted playsinline></video>
+                                <canvas id="liveCanvas" class="d-none"></canvas>
+                            </div>
+
+                            <!-- Camera Status -->
+                            <div class="camera-status alert alert-info d-none" id="cameraStatus">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <span id="cameraStatusText">Initializing camera...</span>
+                            </div>
+
+                            <!-- Controls -->
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                                <button class="btn btn-primary btn-lg" id="startCameraBtn">
+                                    <i class="bi bi-camera-video me-2"></i>Start Camera
+                                </button>
+                                <button class="btn btn-success btn-lg" id="captureBtn" disabled>
+                                    <i class="bi bi-camera me-2"></i>Capture & Process
+                                </button>
+                                <button class="btn btn-outline-secondary btn-lg" id="stopCameraBtn" disabled>
+                                    <i class="bi bi-stop-circle me-2"></i>Stop Camera
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <!-- Live Results -->
+                            <div class="live-results">
+                                <h6 class="fw-bold mb-3">
+                                    <i class="bi bi-graph-up me-2"></i>Live Detection
+                                </h6>
+                                <div class="detection-stats">
+                                    <div class="stat-item d-flex justify-content-between mb-2">
+                                        <span>Faces Detected:</span>
+                                        <span class="badge bg-info" id="facesCount">0</span>
+                                    </div>
+                                    <div class="stat-item d-flex justify-content-between mb-2">
+                                        <span>Students Recognized:</span>
+                                        <span class="badge bg-success" id="recognizedCount">0</span>
+                                    </div>
+                                    <div class="stat-item d-flex justify-content-between mb-2">
+                                        <span>Unknown Faces:</span>
+                                        <span class="badge bg-warning" id="unknownCount">0</span>
+                                    </div>
+                                    <div class="stat-item d-flex justify-content-between mb-2">
+                                        <span>Confidence Level:</span>
+                                        <span class="badge bg-primary" id="confidenceLevel">0%</span>
+                                    </div>
+                                </div>
+
+                                <!-- Recognition List -->
+                                <div class="recognition-list mt-4">
+                                    <h6 class="fw-bold mb-3">Recognized Students</h6>
+                                    <div id="recognitionResults" class="recognition-results">
+                                        <div class="text-center text-muted py-3">
+                                            <i class="bi bi-people display-4"></i>
+                                            <p class="mt-2">No students recognized yet</p>
+                                            <small class="text-muted">Start camera to begin detection</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Section -->
+        <div class="method-section d-none" id="uploadSection">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-success text-white py-3">
+                    <h5 class="mb-0">
+                        <i class="bi bi-cloud-upload me-2"></i>Upload Classroom Photo
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('mark_attendance') }}" enctype="multipart/form-data" id="uploadForm">
+                        <!-- Upload Area -->
+                        <div class="upload-area border-2 border-dashed rounded-3 p-5 text-center mb-4"
+                             id="uploadArea">
+                            <i class="bi bi-cloud-arrow-up display-1 text-muted mb-3"></i>
+                            <h5>Drag & Drop Classroom Photo</h5>
+                            <p class="text-muted mb-3">or click to browse your files</p>
+                            <input type="file" id="image" name="image" accept="image/*" class="d-none" required>
+                            <button type="button" class="btn btn-success btn-lg" onclick="document.getElementById('image').click()">
+                                <i class="bi bi-folder me-2"></i>Select Photo
+                            </button>
+                            <div class="mt-3">
+                                <small class="text-muted">
+                                    Supported formats: JPG, PNG, WebP • Max size: 16MB
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Image Preview -->
+                        <div class="image-preview mb-4 d-none" id="imagePreview">
+                            <h6 class="fw-bold mb-3">
+                                <i class="bi bi-image me-2"></i>Photo Preview
+                            </h6>
+                            <div class="preview-container text-center">
+                                <img id="previewImage" class="img-fluid rounded shadow" style="max-height: 300px;">
+                                <div class="mt-3">
+                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="clearImage()">
+                                        <i class="bi bi-trash me-2"></i>Remove Photo
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Processing Options -->
+                        <div class="processing-options mb-4">
+                            <h6 class="fw-bold mb-3">
+                                <i class="bi bi-gear me-2"></i>Processing Options
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Recognition Accuracy</label>
+                                    <select class="form-select" name="accuracy_level" id="accuracyLevel">
+                                        <option value="0.4">High Accuracy (Slower)</option>
+                                        <option value="0.5" selected>Balanced</option>
+                                        <option value="0.6">Fast Processing</option>
+                                    </select>
+                                    <small class="form-text text-muted">Lower values = stricter matching</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Detection Mode</label>
+                                    <select class="form-select" name="detection_mode" id="detectionMode">
+                                        <option value="accurate">Accurate (Slower)</option>
+                                        <option value="balanced" selected>Balanced</option>
+                                        <option value="fast">Fast Detection</option>
+                                    </select>
+                                    <small class="form-text text-muted">Adjust for image quality</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success btn-lg py-3" id="processBtn" disabled>
+                                <i class="bi bi-magic me-2"></i>Process Attendance
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column - Instructions and Statistics -->
+    <div class="col-lg-4">
+        <!-- Quick Stats -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-0 py-3">
+                <h5 class="mb-0">
+                    <i class="bi bi-speedometer2 me-2 text-primary"></i>Today's Stats
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="stats-grid">
+                    <div class="stat-item text-center p-3 bg-light rounded">
+                        <i class="bi bi-people display-6 text-primary mb-2"></i>
+                        <h4 class="fw-bold mb-1" id="totalStudentsToday">
+                            {% if total_students > 0 %}{{ total_students }}{% else %}0{% endif %}
+                        </h4>
+                        <small class="text-muted">Total Students</small>
+                    </div>
+                    <div class="stat-item text-center p-3 bg-light rounded">
+                        <i class="bi bi-check-circle display-6 text-success mb-2"></i>
+                        <h4 class="fw-bold mb-1" id="presentToday">
+                            {% if present_today > 0 %}{{ present_today }}{% else %}0{% endif %}
+                        </h4>
+                        <small class="text-muted">Present Today</small>
+                    </div>
+                    <div class="stat-item text-center p-3 bg-light rounded">
+                        <i class="bi bi-clock display-6 text-warning mb-2"></i>
+                        <h4 class="fw-bold mb-1" id="attendanceTime">{{ now.strftime('%H:%M') }}</h4>
+                        <small class="text-muted">Current Time</small>
+                    </div>
+                    <div class="stat-item text-center p-3 bg-light rounded">
+                        <i class="bi bi-percent display-6 text-info mb-2"></i>
+                        <h4 class="fw-bold mb-1" id="attendanceRate">
+                            {% if total_students > 0 %}{{ ((present_today / total_students) * 100)|round(1) }}%{% else %}0%{% endif %}
+                        </h4>
+                        <small class="text-muted">Attendance Rate</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Best Practices -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-0 py-3">
+                <h5 class="mb-0">
+                    <i class="bi bi-lightbulb me-2 text-warning"></i>Best Practices
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="practice-list">
+                    <div class="practice-item d-flex align-items-start mb-3">
+                        <i class="bi bi-sun text-warning me-3 mt-1"></i>
+                        <div>
+                            <h6 class="fw-bold mb-1">Good Lighting</h6>
+                            <p class="text-muted small mb-0">Ensure proper lighting for better face detection</p>
+                        </div>
+                    </div>
+                    <div class="practice-item d-flex align-items-start mb-3">
+                        <i class="bi bi-camera text-info me-3 mt-1"></i>
+                        <div>
+                            <h6 class="fw-bold mb-1">Clear View</h6>
+                            <p class="text-muted small mb-0">Make sure faces are clearly visible and not obscured</p>
+                        </div>
+                    </div>
+                    <div class="practice-item d-flex align-items-start mb-3">
+                        <i class="bi bi-people text-success me-3 mt-1"></i>
+                        <div>
+                            <h6 class="fw-bold mb-1">Proper Distance</h6>
+                            <p class="text-muted small mb-0">Maintain optimal distance (3-5 meters from camera)</p>
+                        </div>
+                    </div>
+                    <div class="practice-item d-flex align-items-start">
+                        <i class="bi bi-image text-primary me-3 mt-1"></i>
+                        <div>
+                            <h6 class="fw-bold mb-1">High Resolution</h6>
+                            <p class="text-muted small mb-0">Use high-quality images for better accuracy</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent border-0 py-3">
+                <h5 class="mb-0">
+                    <i class="bi bi-clock-history me-2 text-primary"></i>Recent Sessions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="session-list">
+                    {% if recent_sessions and recent_sessions|length > 0 %}
+                        {% for session in recent_sessions %}
+                        <div class="session-item d-flex align-items-center mb-3 p-2 bg-light rounded">
+                            <div class="session-icon me-3">
+                                <i class="bi bi-{% if session.type == 'live' %}camera-video{% else %}cloud-upload{% endif %} text-primary"></i>
+                            </div>
+                            <div class="session-info flex-grow-1">
+                                <h6 class="fw-bold mb-0">{{ session.time }}</h6>
+                                <small class="text-muted">{{ session.students }} students recognized</small>
+                            </div>
+                            <div class="session-status">
+                                <span class="badge bg-{% if session.status == 'success' %}success{% else %}warning{% endif %}">
+                                    {{ session.status }}
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                    <div class="text-center py-3">
+                        <i class="bi bi-inbox display-4 text-muted"></i>
+                        <p class="text-muted mt-2 mb-2">No recent sessions</p>
+                        <small class="text-muted">Complete your first attendance session to see history</small>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                {% if recent_sessions and recent_sessions|length > 0 %}
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('reports') }}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-clock-history me-1"></i>View Full History
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Processing Modal -->
+<div class="modal fade" id="processingModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-gear-wide-connected me-2"></i>Processing Attendance
+                </h5>
+            </div>
+            <div class="modal-body text-center py-5">
+                <div class="processing-animation mb-4">
+                    <div class="spinner-border text-primary" style="width: 4rem; height: 4rem;" role="status">
+                        <span class="visually-hidden">Processing...</span>
+                    </div>
+                </div>
+                <h5 class="fw-bold mb-3">Analyzing Faces...</h5>
+                <p class="text-muted mb-4" id="processingMessage">Please wait while we process the image and identify students</p>
+                
+                <div class="progress mb-3" style="height: 8px;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" 
+                         style="width: 100%"></div>
+                </div>
+                
+                <div class="processing-stats">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <h6 class="fw-bold mb-1" id="processingFaces">0</h6>
+                            <small class="text-muted">Faces Found</small>
+                        </div>
+                        <div class="col-4">
+                            <h6 class="fw-bold mb-1" id="processingRecognized">0</h6>
+                            <small class="text-muted">Students Matched</small>
+                        </div>
+                        <div class="col-4">
+                            <h6 class="fw-bold mb-1" id="processingTime">0s</h6>
+                            <small class="text-muted">Processing Time</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.method-card {
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.method-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+.method-section {
+    transition: all 0.3s ease;
+}
+
+.hover-lift:hover {
+    transform: translateY(-2px);
+}
+
+.camera-container {
+    position: relative;
+    background: #f8f9fa;
+    border-radius: 12px;
+    overflow: hidden;
+    min-height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px dashed #dee2e6;
+    transition: all 0.3s ease;
+}
+
+.camera-container.active {
+    background: #000;
+    border: none;
+}
+
+.camera-placeholder {
+    text-align: center;
+    color: #666;
+}
+
+#liveVideo {
+    width: 100%;
+    height: auto;
+    border-radius: 12px;
+    transform: scaleX(-1); /* Mirror effect for webcam */
+}
+
+.upload-area {
+    border-style: dashed !important;
+    border-color: #dee2e6;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.upload-area:hover {
+    border-color: #198754 !important;
+    background-color: #f8f9fa;
+}
+
+.upload-area.dragover {
+    border-color: #198754 !important;
+    background-color: #e8f5e8;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.recognition-results {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.recognition-item {
+    padding: 0.75rem;
+    border-left: 4px solid #198754;
+    background: #f8f9fa;
+    margin-bottom: 0.5rem;
+    border-radius: 0 8px 8px 0;
+    transition: all 0.3s ease;
+}
+
+.recognition-item.unknown {
+    border-left-color: #fd7e14;
+}
+
+.recognition-item:hover {
+    background: #e9ecef;
+    transform: translateX(2px);
+}
+
+.practice-item {
+    transition: transform 0.2s ease;
+}
+
+.practice-item:hover {
+    transform: translateX(5px);
+}
+
+.session-item {
+    transition: all 0.3s ease;
+}
+
+.session-item:hover {
+    background: #e9ecef !important;
+    transform: translateX(2px);
+}
+
+/* Pulse animation for live indicator */
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.7; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+/* Face detection overlay */
+.face-overlay {
+    position: absolute;
+    border: 3px solid #198754;
+    background: rgba(25, 135, 84, 0.1);
+    border-radius: 8px;
+    pointer-events: none;
+}
+
+.face-label {
+    position: absolute;
+    background: #198754;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    pointer-events: none;
+}
+
+/* Processing animation */
+@keyframes processing {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.processing-animation i {
+    animation: processing 2s infinite;
+}
+
+/* Camera status alert */
+.camera-status {
+    border-radius: 8px;
+    border-left: 4px solid #0dcaf0;
+}
+
+/* Button loading states */
+.btn-loading {
+    position: relative;
+    color: transparent !important;
+}
+
+.btn-loading::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    top: 50%;
+    left: 50%;
+    margin-left: -10px;
+    margin-top: -10px;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    border-right-color: transparent;
+    animation: spinner 0.75s linear infinite;
+}
+
+@keyframes spinner {
+    to { transform: rotate(360deg); }
+}
+
+/* Fade in animation */
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .camera-container {
+        min-height: 300px;
+    }
+    
+    .method-card {
+        margin-bottom: 1rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .camera-container {
+        min-height: 250px;
+    }
+    
+    .btn-lg {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Global variables
+let mediaStream = null;
+let processingInterval = null;
+let faceDetectionInterval = null;
+
+// Method selection
+function showMethod(method) {
+    // Hide all method sections
+    document.querySelectorAll('.method-section').forEach(section => {
+        section.classList.add('d-none');
+    });
+    
+    // Stop any active camera
+    stopCamera();
+    
+    // Show selected method with animation
+    setTimeout(() => {
+        if (method === 'live') {
+            document.getElementById('liveSection').classList.remove('d-none');
+            initializeLiveCamera();
+        } else if (method === 'upload') {
+            document.getElementById('uploadSection').classList.remove('d-none');
+            initializeUploadSection();
+        }
+    }, 100);
+}
+
+// Enhanced Live Camera functionality
+function initializeLiveCamera() {
+    const video = document.getElementById('liveVideo');
+    const startBtn = document.getElementById('startCameraBtn');
+    const captureBtn = document.getElementById('captureBtn');
+    const stopBtn = document.getElementById('stopCameraBtn');
+    const placeholder = document.getElementById('cameraPlaceholder');
+    const statusAlert = document.getElementById('cameraStatus');
+    const cameraContainer = document.querySelector('.camera-container');
+
+    startBtn.addEventListener('click', startCamera);
+    stopBtn.addEventListener('click', stopCamera);
+    captureBtn.addEventListener('click', captureAttendance);
+}
+
+async function startCamera() {
+    const video = document.getElementById('liveVideo');
+    const startBtn = document.getElementById('startCameraBtn');
+    const captureBtn = document.getElementById('captureBtn');
+    const stopBtn = document.getElementById('stopCameraBtn');
+    const placeholder = document.getElementById('cameraPlaceholder');
+    const statusAlert = document.getElementById('cameraStatus');
+    const cameraContainer = document.getElementById('cameraContainer');
+
+    try {
+        showAlert('Requesting camera access...', 'info');
+        
+        // Show loading state
+        startBtn.classList.add('btn-loading');
+        startBtn.disabled = true;
+
+        // Get camera stream with better constraints
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+            video: {
+                width: { ideal: 1280 },
+                height: { ideal: 720 },
+                frameRate: { ideal: 30 },
+                facingMode: 'environment'
+            },
+            audio: false
+        });
+
+        video.srcObject = mediaStream;
+        
+        // Wait for video to load
+        video.onloadedmetadata = () => {
+            video.classList.remove('d-none');
+            placeholder.classList.add('d-none');
+            cameraContainer.classList.add('active');
+            
+            // Update UI
+            startBtn.classList.remove('btn-loading');
+            startBtn.disabled = true;
+            captureBtn.disabled = false;
+            stopBtn.disabled = false;
+            
+            startBtn.innerHTML = '<i class="bi bi-camera-video-fill me-2"></i>Camera Active';
+            startBtn.classList.remove('btn-primary');
+            startBtn.classList.add('btn-success');
+            
+            showAlert('Camera activated successfully! Face detection is ready.', 'success');
+            setTimeout(() => {
+                document.querySelector('.alert')?.remove();
+            }, 3000);
+        };
+
+        video.play();
+
+    } catch (error) {
+        console.error('Camera error:', error);
+        
+        // Reset button state
+        startBtn.classList.remove('btn-loading');
+        startBtn.disabled = false;
+        
+        let errorMessage = 'Unable to access camera. ';
+        
+        if (error.name === 'NotAllowedError') {
+            errorMessage += 'Please allow camera permissions and refresh the page.';
+        } else if (error.name === 'NotFoundError') {
+            errorMessage += 'No camera found. Please check your device.';
+        } else if (error.name === 'NotSupportedError') {
+            errorMessage += 'Your browser does not support camera access.';
+        } else {
+            errorMessage += 'Please try again or use upload method.';
+        }
+        
+        showAlert(errorMessage, 'danger');
+    }
+}
+
+function stopCamera() {
+    const video = document.getElementById('liveVideo');
+    const startBtn = document.getElementById('startCameraBtn');
+    const captureBtn = document.getElementById('captureBtn');
+    const stopBtn = document.getElementById('stopCameraBtn');
+    const placeholder = document.getElementById('cameraPlaceholder');
+    const statusAlert = document.getElementById('cameraStatus');
+    const cameraContainer = document.getElementById('cameraContainer');
+
+    if (mediaStream) {
+        mediaStream.getTracks().forEach(track => track.stop());
+        mediaStream = null;
+    }
+    
+    video.classList.add('d-none');
+    placeholder.classList.remove('d-none');
+    cameraContainer.classList.remove('active');
+    statusAlert.classList.add('d-none');
+    
+    // Update button states
+    startBtn.disabled = false;
+    captureBtn.disabled = true;
+    stopBtn.disabled = true;
+    
+    startBtn.innerHTML = '<i class="bi bi-camera-video me-2"></i>Start Camera';
+    startBtn.classList.remove('btn-success');
+    startBtn.classList.add('btn-primary');
+
+    // Stop face detection simulation
+    stopFaceDetectionSimulation();
+    resetDetectionStats();
+}
+
+function startFaceDetectionSimulation() {
+    stopFaceDetectionSimulation();
+    faceDetectionInterval = setInterval(simulateFaceDetection, 2000);
+}
+
+function stopFaceDetectionSimulation() {
+    if (faceDetectionInterval) {
+        clearInterval(faceDetectionInterval);
+        faceDetectionInterval = null;
+    }
+}
+
+function simulateFaceDetection() {
+    const faces = Math.floor(Math.random() * 10) + 1;
+    const recognized = Math.floor(faces * 0.7);
+    const confidence = Math.floor(Math.random() * 30) + 70;
+    
+    updateDetectionStats(faces, recognized, faces - recognized, confidence);
+    updateRecognitionList(recognized);
+}
+
+function updateDetectionStats(faces, recognized, unknown, confidence) {
+    document.getElementById('facesCount').textContent = faces;
+    document.getElementById('recognizedCount').textContent = recognized;
+    document.getElementById('unknownCount').textContent = unknown;
+    document.getElementById('confidenceLevel').textContent = confidence + '%';
+}
+
+function updateRecognitionList(count) {
+    const container = document.getElementById('recognitionResults');
+    
+    if (count === 0) {
+        container.innerHTML = `
+            <div class="text-center text-muted py-3">
+                <i class="bi bi-people display-4"></i>
+                <p class="mt-2">No students recognized yet</p>
+                <small class="text-muted">Ensure good lighting and clear faces</small>
+            </div>
+        `;
+        return;
+    }
+    
+    const sampleStudents = [
+        {name: 'John Smith', roll: 'CS2023001', confidence: 92},
+        {name: 'Sarah Johnson', roll: 'CS2023002', confidence: 88},
+        {name: 'Mike Davis', roll: 'CS2023003', confidence: 85},
+        {name: 'Emily Wilson', roll: 'CS2023004', confidence: 91},
+        {name: 'David Brown', roll: 'CS2023005', confidence: 79}
+    ];
+    
+    let html = '';
+    for (let i = 0; i < Math.min(count, sampleStudents.length); i++) {
+        const student = sampleStudents[i];
+        html += `
+            <div class="recognition-item fade-in">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-person-check text-success me-2"></i>
+                    <div class="flex-grow-1">
+                        <div class="fw-semibold">${student.name}</div>
+                        <small class="text-muted">${student.roll}</small>
+                    </div>
+                    <small class="text-success fw-bold">${student.confidence}%</small>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Add some unknown faces for realism
+    if (count < 3) {
+        html += `
+            <div class="recognition-item unknown fade-in">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-person-x text-warning me-2"></i>
+                    <div class="flex-grow-1">
+                        <div class="fw-semibold">Unknown Student</div>
+                        <small class="text-muted">Not recognized</small>
+                    </div>
+                    <small class="text-warning fw-bold">45%</small>
+                </div>
+            </div>
+        `;
+    }
+    
+    container.innerHTML = html;
+}
+
+function resetDetectionStats() {
+    updateDetectionStats(0, 0, 0, 0);
+    updateRecognitionList(0);
+}
+
+async function captureAttendance() {
+    const video = document.getElementById('liveVideo');
+    const captureBtn = document.getElementById('captureBtn');
+    
+    if (!mediaStream || !video) {
+        showAlert('Camera not active. Please start the camera first.', 'warning');
+        return;
+    }
+
+    // Show loading state
+    captureBtn.classList.add('btn-loading');
+    captureBtn.disabled = true;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 1280;
+    canvas.height = video.videoHeight || 720;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0);
+
+    showProcessingModal('Processing live camera capture...');
+
+    try {
+        canvas.toBlob(async (blob) => {
+            const formData = new FormData();
+            formData.append('image', blob, 'live_capture.jpg');
+            
+            // Submit to server
+            const response = await fetch("{{ url_for('mark_attendance') }}", {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (response.ok) {
+                // Redirect to processing page
+                window.location.href = response.url;
+            } else {
+                hideProcessingModal();
+                captureBtn.classList.remove('btn-loading');
+                captureBtn.disabled = false;
+                showAlert('Error processing attendance. Please try again.', 'danger');
+            }
+        }, 'image/jpeg', 0.9);
+    } catch (error) {
+        console.error('Error capturing attendance:', error);
+        hideProcessingModal();
+        captureBtn.classList.remove('btn-loading');
+        captureBtn.disabled = false;
+        showAlert('Error capturing image. Please try again.', 'danger');
+    }
+}
+
+// Enhanced Upload section functionality
+function initializeUploadSection() {
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('image');
+    const preview = document.getElementById('imagePreview');
+    const previewImage = document.getElementById('previewImage');
+    const processBtn = document.getElementById('processBtn');
+
+    // Enhanced file validation
+    fileInput.addEventListener('change', function(e) {
+        if (this.files.length > 0) {
+            const file = this.files[0];
+            
+            // Validate file type
+            const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+            if (!validTypes.includes(file.type)) {
+                showAlert('Please select a valid image (JPG, PNG, or WebP).', 'warning');
+                this.value = '';
+                return;
+            }
+            
+            // Validate file size (16MB max)
+            const maxSize = 16 * 1024 * 1024;
+            if (file.size > maxSize) {
+                showAlert('File size too large. Please select an image under 16MB.', 'warning');
+                this.value = '';
+                return;
+            }
+            
+            handleFileSelect(file, preview, previewImage, processBtn);
+        }
+    });
+
+    // Enhanced drag and drop
+    uploadArea.addEventListener('click', () => fileInput.click());
+    
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+        uploadArea.style.borderColor = '#198754';
+        uploadArea.style.backgroundColor = '#f8f9fa';
+    });
+
+    uploadArea.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        uploadArea.style.borderColor = '';
+        uploadArea.style.backgroundColor = '';
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        uploadArea.style.borderColor = '';
+        uploadArea.style.backgroundColor = '';
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            const file = files[0];
+            if (file.type.startsWith('image/')) {
+                fileInput.files = files;
+                handleFileSelect(file, preview, previewImage, processBtn);
+            } else {
+                showAlert('Please drop a valid image file.', 'warning');
+            }
+        }
+    });
+
+    // Enhanced form submission
+    document.getElementById('uploadForm').addEventListener('submit', function(e) {
+        const fileInput = document.getElementById('image');
+        const processBtn = document.getElementById('processBtn');
+        
+        if (!fileInput.files.length) {
+            e.preventDefault();
+            showAlert('Please select an image first.', 'warning');
+            return;
+        }
+        
+        // Show processing state
+        processBtn.classList.add('btn-loading');
+        processBtn.disabled = true;
+        processBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Processing...';
+        
+        showProcessingModal('Processing classroom photo...');
+    });
+}
+
+function handleFileSelect(file, preview, previewImage, processBtn) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        previewImage.src = e.target.result;
+        preview.classList.remove('d-none');
+        processBtn.disabled = false;
+        
+        // Scroll to preview
+        preview.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    };
+    reader.onerror = () => {
+        showAlert('Error reading file. Please try another image.', 'danger');
+    };
+    reader.readAsDataURL(file);
+}
+
+// Clear uploaded image
+function clearImage() {
+    document.getElementById('image').value = '';
+    document.getElementById('imagePreview').classList.add('d-none');
+    document.getElementById('processBtn').disabled = true;
+}
+
+// Processing modal functions
+function showProcessingModal(message = 'Processing attendance...') {
+    const modal = new bootstrap.Modal(document.getElementById('processingModal'));
+    document.getElementById('processingMessage').textContent = message;
+    modal.show();
+    
+    // Reset and start processing stats
+    resetProcessingStats();
+    startProcessingStats();
+}
+
+function hideProcessingModal() {
+    const modal = bootstrap.Modal.getInstance(document.getElementById('processingModal'));
+    modal?.hide();
+    stopProcessingStats();
+}
+
+function resetProcessingStats() {
+    document.getElementById('processingFaces').textContent = '0';
+    document.getElementById('processingRecognized').textContent = '0';
+    document.getElementById('processingTime').textContent = '0s';
+}
+
+function startProcessingStats() {
+    const startTime = new Date();
+    
+    processingInterval = setInterval(() => {
+        const elapsed = Math.floor((new Date() - startTime) / 1000);
+        document.getElementById('processingTime').textContent = elapsed + 's';
+        
+        // Demo progress simulation (only in localhost)
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            const faces = Math.min(30, Math.floor(elapsed * 3));
+            const recognized = Math.min(25, Math.floor(faces * 0.8));
+            
+            document.getElementById('processingFaces').textContent = faces;
+            document.getElementById('processingRecognized').textContent = recognized;
+        }
+    }, 1000);
+}
+
+function stopProcessingStats() {
+    if (processingInterval) {
+        clearInterval(processingInterval);
+        processingInterval = null;
+    }
+}
+
+// Utility functions
+function showAlert(message, type = 'info') {
+    // Remove any existing alerts
+    document.querySelectorAll('.alert-dismissible').forEach(alert => {
+        if (alert.parentNode) alert.remove();
+    });
+    
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show mt-3`;
+    alertDiv.innerHTML = `
+        <i class="bi bi-${getAlertIcon(type)} me-2"></i>${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    const container = document.querySelector('.container.py-5');
+    if (container) {
+        container.insertBefore(alertDiv, container.firstChild);
+        
+        // Auto-remove after 5 seconds for success/info, 10 seconds for warnings/errors
+        const timeout = type === 'success' || type === 'info' ? 5000 : 10000;
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, timeout);
+    }
+}
+
+function getAlertIcon(type) {
+    const icons = {
+        'success': 'check-circle-fill',
+        'danger': 'exclamation-triangle-fill',
+        'warning': 'exclamation-triangle-fill',
+        'info': 'info-circle-fill'
+    };
+    return icons[type] || 'info-circle-fill';
+}
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Enhanced Attendance page initialized');
+    
+    // Stop camera when leaving page
+    window.addEventListener('beforeunload', function() {
+        if (mediaStream) {
+            mediaStream.getTracks().forEach(track => track.stop());
+        }
+    });
+    
+    // Initialize tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Update current time every minute
+    setInterval(() => {
+        const now = new Date();
+        document.getElementById('attendanceTime').textContent = 
+            now.getHours().toString().padStart(2, '0') + ':' + 
+            now.getMinutes().toString().padStart(2, '0');
+    }, 60000);
+});
+</script>
+{% endblock %}

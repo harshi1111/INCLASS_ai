@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}User Profile - INCLASS AI{% endblock %}
+{% block page_title %}User Profile{% endblock %}
+{% block page_subtitle %}Manage your account settings{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">Admin Profile</h4>
+                <p class="text-muted">System Administrator Account</p>
+                
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <strong>Username:</strong> admin
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Role:</strong> Administrator
+                    </div>
+                </div>
+                
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <strong>Email:</strong> admin@inclass-ai.edu
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Last Login:</strong> {{ now.strftime('%Y-%m-%d %H:%M') }}
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <a href="{{ url_for('change_password') }}" class="btn btn-primary">
+                        <i class="bi bi-key me-2"></i>Change Password
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

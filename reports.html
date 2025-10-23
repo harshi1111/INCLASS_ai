@@ -1,0 +1,1197 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance Reports - AI Classroom Attendance System{% endblock %}
+{% block page_title %}Attendance Analytics & Reports{% endblock %}
+{% block page_subtitle %}Comprehensive insights and detailed analytics for informed decision making{% endblock %}
+
+{% block content %}
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header bg-transparent border-0 py-3">
+    <div class="d-flex justify-content-between align-items-center">
+      <h5 class="mb-0"><i class="bi bi-funnel me-2 text-primary"></i>Report Filters</h5>
+      <div class="d-flex gap-2">
+        <button class="btn btn-outline-primary" id="refreshBtn"><i class="bi bi-arrow-clockwise me-2"></i>Refresh</button>
+        <button class="btn btn-success" id="exportBtn"><i class="bi bi-file-earmark-arrow-down me-2"></i>Export Report</button>
+      </div>
+    </div>
+  </div>
+  <div class="card-body">
+    <form method="GET" id="reportFilters">
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">Date</label>
+          <select class="form-select" name="date" id="dateFilter">
+            <option value="">All Dates</option>
+            {% for date in dates %}
+              <option value="{{ date }}" {% if date == selected_date %}selected{% endif %}>{{ date }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">Department</label>
+          <select class="form-select" name="department" id="departmentFilter">
+            <option value="all" {% if selected_department == 'all' %}selected{% endif %}>All Departments</option>
+            {% for department in departments %}
+              <option value="{{ department }}" {% if department == selected_department %}selected{% endif %}>{{ department }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">Time Period</label>
+          <select class="form-select" id="timePeriod">
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+            <option value="semester">Semester</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">Report Type</label>
+          <select class="form-select" id="reportType">
+            <option value="summary">Summary Report</option>
+            <option value="detailed" selected>Detailed Report</option>
+            <option value="analytics">Analytics Report</option>
+            <option value="comparative">Comparative Report</option>
+          </select>
+        </div>
+      </div>
+      <div class="row mt-3">
+        <div class="col-12">
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-filter me-2"></i>Apply Filters</button>
+            <button type="button" class="btn btn-outline-secondary" onclick="resetFilters()"><i class="bi bi-arrow-repeat me-2"></i>Reset</button>
+            <div class="ms-auto">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="autoRefresh" checked>
+                <label class="form-check-label" for="autoRefresh">Auto-refresh</label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-xl-3 col-md-6">
+    <div class="card stat-card bg-primary text-white hover-lift">
+      <div class="card-body">
+        <div class="d-flex align-items-center">
+          <div class="flex-grow-1">
+            <h3 class="fw-bold mb-0">{{ total_students }}</h3>
+            <p class="mb-0 opacity-75">Total Students</p>
+          </div>
+          <div class="flex-shrink-0"><i class="bi bi-people display-4 opacity-50"></i></div>
+        </div>
+        <div class="mt-3">
+          <span class="badge bg-light text-primary"><i class="bi bi-database me-1"></i> {{ departments|length }} Departments</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-md-6">
+    <div class="card stat-card bg-success text-white hover-lift">
+      <div class="card-body">
+        <div class="d-flex align-items-center">
+          <div class="flex-grow-1">
+            <h3 class="fw-bold mb-0">{{ present_count }}</h3>
+            <p class="mb-0 opacity-75">Present Students</p>
+          </div>
+          <div class="flex-shrink-0"><i class="bi bi-check-circle display-4 opacity-50"></i></div>
+        </div>
+        <div class="mt-3">
+          <span class="badge bg-light text-success">
+            {{ ((present_count / total_students) * 100)|round(1) if total_students > 0 else 0 }}% Attendance
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-md-6">
+    <div class="card stat-card bg-warning text-dark hover-lift">
+      <div class="card-body">
+        <div class="d-flex align-items-center">
+          <div class="flex-grow-1">
+            <h3 class="fw-bold mb-0">{{ absent_count }}</h3>
+            <p class="mb-0 opacity-75">Absent Students</p>
+          </div>
+          <div class="flex-shrink-0"><i class="bi bi-x-circle display-4 opacity-50"></i></div>
+        </div>
+        <div class="mt-3">
+          <span class="badge bg-dark text-warning">
+            {{ ((absent_count / total_students) * 100)|round(1) if total_students > 0 else 0 }}% Absence Rate
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-md-6">
+    <div class="card stat-card bg-info text-white hover-lift">
+      <div class="card-body">
+        <div class="d-flex align-items-center">
+          <div class="flex-grow-1">
+            <h3 class="fw-bold mb-0">{{ attendance_rate|round(1) if total_students > 0 else 0 }}%</h3>
+            <p class="mb-0 opacity-75">Overall Rate</p>
+          </div>
+          <div class="flex-shrink-0"><i class="bi bi-graph-up display-4 opacity-50"></i></div>
+        </div>
+        <div class="mt-3">
+          <div class="progress bg-light bg-opacity-25" style="height: 6px;">
+            <div class="progress-bar bg-white" style="width: {{ attendance_rate if total_students > 0 else 0 }}%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-xl-8">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-transparent border-0 py-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <h5 class="mb-0"><i class="bi bi-graph-up me-2 text-primary"></i>Attendance Trend</h5>
+          <div class="dropdown">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+              <i class="bi bi-calendar me-1"></i> Last 7 Days
+            </button>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="#" data-period="7">Last 7 Days</a></li>
+              <li><a class="dropdown-item" href="#" data-period="30">Last 30 Days</a></li>
+              <li><a class="dropdown-item" href="#" data-period="90">Last 90 Days</a></li>
+              <li><a class="dropdown-item" href="#" data-period="365">Last Year</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="chart-container" style="height: 300px;">
+          <canvas id="attendanceTrendChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-transparent border-0 py-3">
+        <h5 class="mb-0"><i class="bi bi-pie-chart me-2 text-primary"></i>Department Distribution</h5>
+      </div>
+      <div class="card-body">
+        <div class="chart-container" style="height: 300px;">
+          <canvas id="departmentChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header bg-transparent border-0 py-3">
+    <div class="d-flex justify-content-between align-items-center">
+      <h5 class="mb-0"><i class="bi bi-table me-2 text-primary"></i>Detailed Attendance Records</h5>
+      <div class="d-flex gap-2">
+        <div class="input-group input-group-sm" style="width: 200px;">
+          <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+          <input type="text" class="form-control" placeholder="Search students..." id="searchTable">
+        </div>
+        <div class="dropdown">
+          <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+            <i class="bi bi-eye me-1"></i>Columns
+          </button>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="#" onclick="toggleColumn('department')"><i class="bi bi-building me-2"></i>Department</a></li>
+            <li><a class="dropdown-item" href="#" onclick="toggleColumn('time')"><i class="bi bi-clock me-2"></i>Time</a></li>
+            <li><a class="dropdown-item" href="#" onclick="toggleColumn('confidence')"><i class="bi bi-graph-up me-2"></i>Confidence</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0" id="attendanceTable">
+        <thead class="table-light">
+          <tr>
+            <th class="sortable" data-sort="name" data-type="string"><i class="bi bi-sort-alpha-down me-1"></i>Student Name</th>
+            <th class="sortable" data-sort="roll" data-type="string"><i class="bi bi-123 me-1"></i>Roll Number</th>
+            <th class="department-column sortable" data-sort="department" data-type="string"><i class="bi bi-building me-1"></i>Department</th>
+            <th class="sortable" data-sort="status" data-type="string"><i class="bi bi-info-circle me-1"></i>Status</th>
+            <th class="time-column sortable" data-sort="time" data-type="time"><i class="bi bi-clock me-1"></i>Time</th>
+            <th class="confidence-column sortable" data-sort="confidence" data-type="number"><i class="bi bi-graph-up me-1"></i>Confidence</th>
+            <th width="100">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for record in attendance_data %}
+          <tr class="attendance-row" data-roll="{{ record[1] }}" data-date="{{ selected_date }}">
+            <td class="fw-semibold student-name">{{ record[0] }}</td>
+            <td class="text-muted roll-number">{{ record[1] }}</td>
+            <td class="department-column"><span class="badge bg-light text-dark">{{ record[2] }}</span></td>
+            <td class="status-cell">
+              <span class="badge {% if record[3] == 'Present' %}bg-success{% else %}bg-danger{% endif %} status-badge">
+                <i class="bi {% if record[3] == 'Present' %}bi-check-circle{% else %}bi-x-circle{% endif %} me-1"></i>{{ record[3] }}
+              </span>
+            </td>
+            <td class="time-column text-muted attendance-time">{{ record[4] if record[4] else 'N/A' }}</td>
+            <td class="confidence-column">
+              <div class="d-flex align-items-center">
+                <div class="progress flex-grow-1 me-2" style="height: 6px;">
+                  <div class="progress-bar {% if record[5] and record[5] > 0.8 %}bg-success{% elif record[5] and record[5] > 0.6 %}bg-warning{% else %}bg-danger{% endif %}"
+                       style="width: {{ (record[5] or 0) * 100 }}%"></div>
+                </div>
+                <small class="text-muted confidence-value">{{ "%.1f"|format((record[5] or 0) * 100) }}%</small>
+              </div>
+            </td>
+            <td>
+              <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-primary" onclick="viewStudentDetails('{{ record[1] }}')" title="View Student Details">
+                  <i class="bi bi-eye"></i>
+                </button>
+                <button class="btn btn-outline-warning" onclick="editAttendanceRecord('{{ record[1] }}','{{ selected_date }}')" title="Edit Attendance">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <a href="{{ url_for('export_csv', date=selected_date, department=selected_department) }}" class="btn btn-outline-success" title="Export Record">
+                  <i class="bi bi-download"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" class="text-center py-5">
+              <i class="bi bi-inbox display-4 text-muted"></i>
+              <p class="text-muted mt-3">No attendance records found for the selected criteria</p>
+              <a href="{{ url_for('mark_attendance') }}" class="btn btn-primary mt-2"><i class="bi bi-camera me-2"></i>Take Attendance</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card-footer bg-transparent border-0 py-3">
+    <div class="d-flex justify-content-between align-items-center">
+      <div class="text-muted">
+        Showing <strong id="visibleCount">{{ attendance_data|length }}</strong> of <strong>{{ total_students }}</strong> records
+        {% if selected_department != 'all' %}
+        in <strong>{{ selected_department }}</strong> department
+        {% endif %}
+      </div>
+      <nav>
+        <ul class="pagination pagination-sm mb-0" id="paginationControls">
+          <!-- Pagination will be generated by JavaScript -->
+        </ul>
+      </nav>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-transparent border-0 py-3">
+        <h5 class="mb-0"><i class="bi bi-calendar-week me-2 text-primary"></i>Weekly Pattern</h5>
+      </div>
+      <div class="card-body">
+        <div class="chart-container" style="height: 250px;">
+          <canvas id="weeklyPatternChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-transparent border-0 py-3">
+        <h5 class="mb-0"><i class="bi bi-speedometer me-2 text-primary"></i>System Performance</h5>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-6">
+            <div class="text-center p-3 bg-light rounded">
+              <i class="bi bi-camera-video display-6 text-primary mb-2"></i>
+              <h4 class="fw-bold mb-1" id="recognitionAccuracy">98.7%</h4>
+              <small class="text-muted">Recognition Accuracy</small>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="text-center p-3 bg-light rounded">
+              <i class="bi bi-lightning display-6 text-success mb-2"></i>
+              <h4 class="fw-bold mb-1" id="avgProcessingTime">2.3s</h4>
+              <small class="text-muted">Avg Processing Time</small>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="text-center p-3 bg-light rounded">
+              <i class="bi bi-database display-6 text-info mb-2"></i>
+              <h4 class="fw-bold mb-1">{{ total_students * 5 }}</h4>
+              <small class="text-muted">Total Records</small>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="text-center p-3 bg-light rounded">
+              <i class="bi bi-clock-history display-6 text-warning mb-2"></i>
+              <h4 class="fw-bold mb-1" id="timeSaved">15.2h</h4>
+              <small class="text-muted">Time Saved</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Export Modal -->
+<div class="modal fade" id="exportModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title"><i class="bi bi-file-earmark-arrow-down me-2"></i>Export Report</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-4">
+          <div class="col-md-6">
+            <div class="export-option card border-0 bg-light hover-lift text-center p-4">
+              <i class="bi bi-filetype-csv display-3 text-success mb-3"></i>
+              <h5>CSV Format</h5>
+              <p class="text-muted">Comma-separated values for spreadsheets</p>
+              <a href="{{ url_for('export_csv', date=selected_date, department=selected_department) }}" class="btn btn-success w-100">
+                <i class="bi bi-download me-2"></i>Download CSV
+              </a>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="export-option card border-0 bg-light hover-lift text-center p-4">
+              <i class="bi bi-filetype-pdf display-3 text-danger mb-3"></i>
+              <h5>PDF Report</h5>
+              <p class="text-muted">Professional formatted document</p>
+              <button class="btn btn-danger w-100" onclick="generatePDFReport()">
+                <i class="bi bi-download me-2"></i>Generate PDF
+              </button>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="export-option card border-0 bg-light hover-lift text-center p-4">
+              <i class="bi bi-filetype-json display-3 text-warning mb-3"></i>
+              <h5>JSON Data</h5>
+              <p class="text-muted">Structured data for developers</p>
+              <button class="btn btn-warning w-100" onclick="exportJSONData()">
+                <i class="bi bi-download me-2"></i>Export JSON
+              </button>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="export-option card border-0 bg-light hover-lift text-center p-4">
+              <i class="bi bi-file-earmark-spreadsheet display-3 text-info mb-3"></i>
+              <h5>Excel Format</h5>
+              <p class="text-muted">Advanced spreadsheet with charts</p>
+              <button class="btn btn-info w-100" onclick="exportExcelFile()">
+                <i class="bi bi-download me-2"></i>Export Excel
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 p-3 bg-light rounded">
+          <h6 class="fw-bold mb-3"><i class="bi bi-gear me-2"></i>Export Options</h6>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Date Range</label>
+              <select class="form-select" id="exportDateRange">
+                <option value="selected">Selected Date Only</option>
+                <option value="week">This Week</option>
+                <option value="month">This Month</option>
+                <option value="semester">This Semester</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Include Data</label>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="includeConfidence" checked>
+                <label class="form-check-label" for="includeConfidence">Confidence Scores</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="includeTimestamps" checked>
+                <label class="form-check-label" for="includeTimestamps">Timestamps</label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Attendance Modal -->
+<div class="modal fade" id="editAttendanceModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-warning text-dark">
+        <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Edit Attendance Record</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="editAttendanceForm">
+          <input type="hidden" id="editRollNumber" name="roll_number">
+          <input type="hidden" id="editDate" name="date">
+          
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Student</label>
+            <input type="text" class="form-control" id="editStudentName" readonly>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Status</label>
+            <select class="form-select" id="editStatus" name="status" required>
+              <option value="Present">Present</option>
+              <option value="Absent">Absent</option>
+            </select>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Time (HH:MM:SS)</label>
+            <input type="text" class="form-control" id="editTime" name="time" placeholder="09:30:00" pattern="[0-9]{2}:[0-9]{2}:[0-9]{2}">
+            <div class="form-text">Leave empty to use current time</div>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Confidence Score</label>
+            <input type="number" class="form-control" id="editConfidence" name="confidence" min="0" max="1" step="0.01" placeholder="0.85">
+            <div class="form-text">Enter a value between 0 and 1</div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-warning" id="saveAttendanceBtn">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.stat-card {
+  transition: all 0.3s ease;
+  border: none;
+  border-radius: 1rem;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  transition: transform 0.2s ease;
+}
+
+.chart-container {
+  position: relative;
+}
+
+.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s ease;
+}
+
+.sortable:hover {
+  background-color: rgba(0,0,0,0.02);
+}
+
+.attendance-row {
+  transition: all 0.3s ease;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.attendance-row:hover {
+  background-color: rgba(13,110,253,0.05);
+}
+
+.export-option {
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+  border-radius: 0.75rem;
+}
+
+.export-option:hover {
+  border-color: var(--bs-primary);
+  transform: translateY(-5px);
+}
+
+.table-responsive {
+  max-height: 600px;
+}
+
+.table-responsive::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.badge {
+  font-size: 0.75em;
+  font-weight: 500;
+}
+
+.progress {
+  background-color: #e9ecef;
+  border-radius: 3px;
+}
+
+.progress-bar {
+  border-radius: 3px;
+  transition: width 0.6s ease;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .department-column,
+  .time-column,
+  .confidence-column {
+    display: none;
+  }
+  
+  .btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .table-responsive {
+    font-size: 0.875rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .card-body {
+    padding: 1rem;
+  }
+  
+  .display-4 {
+    font-size: 2rem;
+  }
+  
+  .btn-lg {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+  }
+}
+
+/* Print styles */
+@media print {
+  .navbar, .btn, .theme-toggle, .back-to-top, .card-footer {
+    display: none !important;
+  }
+  
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+  }
+  
+  .stat-card {
+    break-inside: avoid;
+  }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Global variables
+let currentSort = { column: 'name', direction: 'asc' };
+let attendanceChart, departmentChart, weeklyChart;
+let currentPage = 1;
+const rowsPerPage = 10;
+
+document.addEventListener('DOMContentLoaded', function() {
+  try {
+    initCharts();
+    initTable();
+    initFilters();
+    initAutoRefresh();
+    initEventListeners();
+    setupPagination();
+  } catch (error) {
+    console.error('Initialization error:', error);
+  }
+});
+
+function initCharts() {
+  // Attendance Trend Chart
+  const trendCtx = document.getElementById('attendanceTrendChart');
+  if (trendCtx) {
+    const dates = {{ dates|tojson }};
+    const attendanceData = {{ attendance_data|tojson }};
+    
+    // Process data for chart (this is simplified - you'd want real trend data)
+    const presentData = dates.map(date => {
+      // In a real implementation, you'd have historical data
+      return Math.floor(Math.random() * ({{ total_students }} - 5)) + 5;
+    });
+
+    attendanceChart = new Chart(trendCtx, {
+      type: 'line',
+      data: {
+        labels: dates,
+        datasets: [{
+          label: 'Daily Attendance',
+          data: presentData,
+          borderColor: '#0d6efd',
+          backgroundColor: 'rgba(13,110,253,0.1)',
+          borderWidth: 3,
+          fill: true,
+          tension: 0.4,
+          pointBackgroundColor: '#0d6efd',
+          pointBorderColor: '#ffffff',
+          pointBorderWidth: 2,
+          pointRadius: 5,
+          pointHoverRadius: 7
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(0,0,0,0.8)',
+            titleColor: '#ffffff',
+            bodyColor: '#ffffff'
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { precision: 0 },
+            grid: { color: 'rgba(0,0,0,0.05)' }
+          },
+          x: {
+            grid: { display: false }
+          }
+        },
+        interaction: { intersect: false, mode: 'index' }
+      }
+    });
+  }
+
+  // Department Distribution Chart
+  const deptCtx = document.getElementById('departmentChart');
+  if (deptCtx) {
+    const labels = {{ departments|tojson }};
+    const counts = {{ department_stats|map(attribute=1)|list|tojson }};
+    
+    departmentChart = new Chart(deptCtx, {
+      type: 'doughnut',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: counts,
+          backgroundColor: [
+            '#0d6efd', '#198754', '#ffc107', '#dc3545', 
+            '#6f42c1', '#20c997', '#fd7e14', '#e83e8c'
+          ],
+          borderWidth: 2,
+          borderColor: '#ffffff'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              padding: 20,
+              usePointStyle: true
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // Weekly Pattern Chart
+  const weeklyCtx = document.getElementById('weeklyPatternChart');
+  if (weeklyCtx) {
+    weeklyChart = new Chart(weeklyCtx, {
+      type: 'bar',
+      data: {
+        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        datasets: [{
+          label: 'Average Attendance',
+          data: [85, 92, 88, 90, 87, 45, 30],
+          backgroundColor: 'rgba(13,110,253,0.8)',
+          borderColor: '#0d6efd',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 100,
+            ticks: { precision: 0 }
+          }
+        }
+      }
+    });
+  }
+}
+
+function initTable() {
+  const searchInput = document.getElementById('searchTable');
+  searchInput?.addEventListener('input', function(e) {
+    filterTable(e.target.value);
+  });
+
+  // Initialize sortable headers
+  document.querySelectorAll('.sortable').forEach(header => {
+    header.addEventListener('click', function() {
+      sortTable(this.dataset.sort, this.dataset.type);
+    });
+  });
+}
+
+function initFilters() {
+  const dateFilter = document.getElementById('dateFilter');
+  const deptFilter = document.getElementById('departmentFilter');
+  
+  dateFilter?.addEventListener('change', function() {
+    if (document.getElementById('autoRefresh')?.checked) {
+      document.getElementById('reportFilters').submit();
+    }
+  });
+  
+  deptFilter?.addEventListener('change', function() {
+    if (document.getElementById('autoRefresh')?.checked) {
+      document.getElementById('reportFilters').submit();
+    }
+  });
+}
+
+function initEventListeners() {
+  // Export button
+  document.getElementById('exportBtn')?.addEventListener('click', function() {
+    const modal = new bootstrap.Modal(document.getElementById('exportModal'));
+    modal.show();
+  });
+
+  // Refresh button
+  document.getElementById('refreshBtn')?.addEventListener('click', refreshData);
+
+  // Save attendance button
+  document.getElementById('saveAttendanceBtn')?.addEventListener('click', saveAttendanceChanges);
+}
+
+function initAutoRefresh() {
+  // Auto-refresh every 30 seconds if enabled
+  setInterval(() => {
+    if (document.getElementById('autoRefresh')?.checked) {
+      refreshData();
+    }
+  }, 30000);
+}
+
+function refreshData() {
+  const btn = document.getElementById('refreshBtn');
+  if (!btn) return;
+
+  const originalHTML = btn.innerHTML;
+  btn.innerHTML = '<i class="bi bi-arrow-clockwise me-2"></i>Refreshing...';
+  btn.disabled = true;
+
+  // Simulate data refresh (in real implementation, this would be an API call)
+  setTimeout(() => {
+    refreshCharts();
+    btn.innerHTML = originalHTML;
+    btn.disabled = false;
+    showToast('Data refreshed successfully', 'success');
+  }, 1000);
+}
+
+function refreshCharts() {
+  if (attendanceChart) attendanceChart.update();
+  if (departmentChart) departmentChart.update();
+  if (weeklyChart) weeklyChart.update();
+}
+
+function filterTable(searchTerm) {
+  const rows = document.querySelectorAll('.attendance-row');
+  let visibleCount = 0;
+  
+  rows.forEach(row => {
+    const text = row.textContent.toLowerCase();
+    const isVisible = text.includes(searchTerm.toLowerCase());
+    row.style.display = isVisible ? '' : 'none';
+    if (isVisible) visibleCount++;
+  });
+  
+  document.getElementById('visibleCount').textContent = visibleCount;
+  setupPagination(); // Re-paginate after filtering
+}
+
+function sortTable(column, type) {
+  const tbody = document.querySelector('#attendanceTable tbody');
+  if (!tbody) return;
+
+  const rows = Array.from(tbody.querySelectorAll('.attendance-row'));
+  const direction = currentSort.column === column && currentSort.direction === 'asc' ? 'desc' : 'asc';
+  currentSort = { column: column, direction: direction };
+
+  const columnIndex = getColumnIndex(column);
+
+  rows.sort((a, b) => {
+    const aCell = a.querySelector(`td:nth-child(${columnIndex})`);
+    const bCell = b.querySelector(`td:nth-child(${columnIndex})`);
+    
+    if (!aCell || !bCell) return 0;
+
+    let aValue = aCell.textContent.trim();
+    let bValue = bCell.textContent.trim();
+
+    // Type-specific sorting
+    if (type === 'number') {
+      aValue = parseFloat(aValue) || 0;
+      bValue = parseFloat(bValue) || 0;
+    } else if (type === 'time') {
+      // Convert time to sortable format
+      aValue = aValue === 'N/A' ? '00:00:00' : aValue;
+      bValue = bValue === 'N/A' ? '00:00:00' : bValue;
+    }
+
+    if (direction === 'asc') {
+      return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+    } else {
+      return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+    }
+  });
+
+  // Clear and re-append sorted rows
+  rows.forEach(row => tbody.appendChild(row));
+  updateSortIndicators(column, direction);
+  setupPagination(); // Re-paginate after sorting
+}
+
+function getColumnIndex(column) {
+  const headers = document.querySelectorAll('thead th');
+  for (let i = 0; i < headers.length; i++) {
+    if (headers[i].dataset.sort === column) return i + 1;
+  }
+  return 1;
+}
+
+function updateSortIndicators(column, direction) {
+  // Reset all icons
+  document.querySelectorAll('.sortable i').forEach(icon => {
+    icon.className = 'bi me-1';
+  });
+
+  // Set current sort indicator
+  const currentHeader = document.querySelector(`[data-sort="${column}"] i`);
+  if (currentHeader) {
+    if (direction === 'asc') {
+      currentHeader.className = 'bi bi-sort-alpha-down me-1';
+    } else {
+      currentHeader.className = 'bi bi-sort-alpha-up me-1';
+    }
+  }
+}
+
+function toggleColumn(column) {
+  const elements = document.querySelectorAll(`.${column}-column`);
+  const isVisible = elements[0]?.style.display !== 'none';
+  
+  elements.forEach(el => {
+    el.style.display = isVisible ? 'none' : '';
+  });
+  
+  showToast(`${column.charAt(0).toUpperCase() + column.slice(1)} column ${isVisible ? 'hidden' : 'shown'}`, 'info');
+}
+
+function setupPagination() {
+  const rows = Array.from(document.querySelectorAll('.attendance-row')).filter(row => 
+    row.style.display !== 'none'
+  );
+  const totalPages = Math.ceil(rows.length / rowsPerPage);
+  const paginationContainer = document.getElementById('paginationControls');
+  
+  if (!paginationContainer || totalPages <= 1) {
+    paginationContainer.innerHTML = '';
+    showPage(1, rows);
+    return;
+  }
+
+  let paginationHTML = '';
+  
+  // Previous button
+  paginationHTML += `
+    <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+      <a class="page-link" href="#" onclick="changePage(${currentPage - 1})">Previous</a>
+    </li>
+  `;
+
+  // Page numbers
+  for (let i = 1; i <= totalPages; i++) {
+    paginationHTML += `
+      <li class="page-item ${i === currentPage ? 'active' : ''}">
+        <a class="page-link" href="#" onclick="changePage(${i})">${i}</a>
+      </li>
+    `;
+  }
+
+  // Next button
+  paginationHTML += `
+    <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+      <a class="page-link" href="#" onclick="changePage(${currentPage + 1})">Next</a>
+    </li>
+  `;
+
+  paginationContainer.innerHTML = paginationHTML;
+  showPage(currentPage, rows);
+}
+
+function changePage(page) {
+  currentPage = page;
+  setupPagination();
+}
+
+function showPage(page, rows) {
+  const startIndex = (page - 1) * rowsPerPage;
+  const endIndex = startIndex + rowsPerPage;
+
+  rows.forEach((row, index) => {
+    row.style.display = (index >= startIndex && index < endIndex) ? '' : 'none';
+  });
+}
+
+function viewStudentDetails(rollNumber) {
+  showToast(`Loading details for student ${rollNumber}...`, 'info');
+  // In real implementation, this would open a student details modal or page
+  setTimeout(() => {
+    showToast(`Student details loaded for ${rollNumber}`, 'success');
+  }, 500);
+}
+
+function editAttendanceRecord(rollNumber, date) {
+  // Find the student record
+  const row = document.querySelector(`[data-roll="${rollNumber}"]`);
+  if (!row) {
+    showToast('Student record not found', 'danger');
+    return;
+  }
+
+  // Populate the edit form
+  document.getElementById('editRollNumber').value = rollNumber;
+  document.getElementById('editDate').value = date;
+  document.getElementById('editStudentName').value = row.querySelector('.student-name').textContent;
+  
+  const currentStatus = row.querySelector('.status-badge').textContent.trim();
+  document.getElementById('editStatus').value = currentStatus;
+  
+  const currentTime = row.querySelector('.attendance-time').textContent;
+  document.getElementById('editTime').value = currentTime === 'N/A' ? '' : currentTime;
+  
+  const confidenceText = row.querySelector('.confidence-value').textContent;
+  const confidenceValue = parseFloat(confidenceText) / 100;
+  document.getElementById('editConfidence').value = confidenceValue || 0.85;
+
+  // Show the modal
+  const modal = new bootstrap.Modal(document.getElementById('editAttendanceModal'));
+  modal.show();
+}
+
+function saveAttendanceChanges() {
+  const form = document.getElementById('editAttendanceForm');
+  const formData = new FormData(form);
+  const data = Object.fromEntries(formData.entries());
+
+  // Validate data
+  if (!data.status) {
+    showToast('Please select a status', 'warning');
+    return;
+  }
+
+  // Convert confidence to float
+  data.confidence = parseFloat(data.confidence) || 0.85;
+
+  // Show loading state
+  const saveBtn = document.getElementById('saveAttendanceBtn');
+  const originalText = saveBtn.innerHTML;
+  saveBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Saving...';
+  saveBtn.disabled = true;
+
+  // Send update request
+  fetch("{{ url_for('api_update_attendance') }}", {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data)
+  })
+  .then(response => response.json())
+  .then(result => {
+    if (result.success) {
+      // Update the table row
+      updateTableRow(data);
+      showToast('Attendance record updated successfully', 'success');
+      bootstrap.Modal.getInstance(document.getElementById('editAttendanceModal')).hide();
+    } else {
+      showToast(result.error || 'Failed to update attendance', 'danger');
+    }
+  })
+  .catch(error => {
+    console.error('Error updating attendance:', error);
+    showToast('Network error while updating attendance', 'danger');
+  })
+  .finally(() => {
+    saveBtn.innerHTML = originalText;
+    saveBtn.disabled = false;
+  });
+}
+
+function updateTableRow(data) {
+  const row = document.querySelector(`[data-roll="${data.roll_number}"]`);
+  if (!row) return;
+
+  // Update status
+  const statusBadge = row.querySelector('.status-badge');
+  statusBadge.className = `badge ${data.status === 'Present' ? 'bg-success' : 'bg-danger'} status-badge`;
+  statusBadge.innerHTML = `<i class="bi ${data.status === 'Present' ? 'bi-check-circle' : 'bi-x-circle'} me-1"></i>${data.status}`;
+
+  // Update time
+  const timeCell = row.querySelector('.attendance-time');
+  timeCell.textContent = data.time || 'N/A';
+
+  // Update confidence
+  const confidenceValue = (data.confidence * 100).toFixed(1);
+  const progressBar = row.querySelector('.progress-bar');
+  const confidenceText = row.querySelector('.confidence-value');
+  
+  progressBar.style.width = `${confidenceValue}%`;
+  progressBar.className = `progress-bar ${data.confidence > 0.8 ? 'bg-success' : data.confidence > 0.6 ? 'bg-warning' : 'bg-danger'}`;
+  confidenceText.textContent = `${confidenceValue}%`;
+}
+
+function resetFilters() {
+  document.getElementById('dateFilter').value = '';
+  document.getElementById('departmentFilter').value = 'all';
+  document.getElementById('reportFilters').submit();
+}
+
+// Export functions
+function generatePDFReport() {
+  showToast('PDF export feature is coming soon!', 'info');
+  // Implementation would generate a PDF report
+}
+
+function exportJSONData() {
+  const data = {
+    report_date: "{{ selected_date }}",
+    department: "{{ selected_department }}",
+    total_students: {{ total_students }},
+    present_count: {{ present_count }},
+    absent_count: {{ absent_count }},
+    attendance_rate: {{ attendance_rate }},
+    generated_at: new Date().toISOString(),
+    records: {{ attendance_data|length }}
+  };
+
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `attendance-report-{{ selected_date }}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  
+  showToast('JSON data exported successfully', 'success');
+}
+
+function exportExcelFile() {
+  showToast('Excel export feature is coming soon!', 'info');
+  // Implementation would generate an Excel file
+}
+
+// Utility functions
+function showToast(message, type = 'info') {
+  const container = document.querySelector('.toast-container') || createToastContainer();
+  const id = 'toast-' + Date.now();
+  
+  const toastHTML = `
+    <div id="${id}" class="toast align-items-center text-bg-${type} border-0" role="alert">
+      <div class="d-flex">
+        <div class="toast-body">
+          <i class="bi ${getToastIcon(type)} me-2"></i>${message}
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+      </div>
+    </div>
+  `;
+  
+  container.insertAdjacentHTML('beforeend', toastHTML);
+  
+  const toastElement = document.getElementById(id);
+  const toast = new bootstrap.Toast(toastElement, { delay: 4000 });
+  toast.show();
+  
+  toastElement.addEventListener('hidden.bs.toast', () => {
+    toastElement.remove();
+  });
+}
+
+function getToastIcon(type) {
+  const icons = {
+    success: 'bi-check-circle-fill',
+    danger: 'bi-exclamation-triangle-fill',
+    warning: 'bi-exclamation-triangle',
+    info: 'bi-info-circle-fill'
+  };
+  return icons[type] || 'bi-info-circle-fill';
+}
+
+function createToastContainer() {
+  const container = document.createElement('div');
+  container.className = 'toast-container position-fixed top-0 end-0 p-3';
+  container.style.zIndex = '9999';
+  document.body.appendChild(container);
+  return container;
+}
+</script>
+{% endblock %}

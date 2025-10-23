@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - AI Classroom Attendance System{% endblock %}
+{% block page_title %}System Settings{% endblock %}
+{% block page_subtitle %}Configure recognition and app behavior{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-transparent border-0 py-3">
+        <h5 class="mb-0"><i class="bi bi-gear me-2 text-primary"></i>Recognition & App Settings</h5>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('settings') }}">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Recognition Model</label>
+              <select class="form-select" name="face_recognition_model">
+                <option value="hog" {% if settings.get('face_recognition_model','hog') == 'hog' %}selected{% endif %}>HOG (CPU)</option>
+                <option value="cnn" {% if settings.get('face_recognition_model','hog') == 'cnn' %}selected{% endif %}>CNN (GPU)</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Tolerance</label>
+              <input type="number" step="0.01" min="0.1" max="0.9" class="form-control" name="face_recognition_tolerance" value="{{ settings.get('face_recognition_tolerance', 0.6) }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Num Jitters</label>
+              <input type="number" min="0" max="10" class="form-control" name="face_recognition_num_jitters" value="{{ settings.get('face_recognition_num_jitters', 1) }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Max Image Size</label>
+              <input type="number" min="256" max="4096" class="form-control" name="max_image_size" value="{{ settings.get('max_image_size', 1024) }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Default Department</label>
+              <input type="text" class="form-control" name="default_department" value="{{ settings.get('default_department', 'Computer Science') }}">
+            </div>
+<!-- Continue from where it left off -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Attendance Threshold</label>
+              <input type="number" min="1" max="100" class="form-control" 
+                     name="attendance_threshold" 
+                     value="{{ settings.get('attendance_threshold', 75) }}">
+              <div class="form-text">Minimum percentage for attendance marking</div>
+            </div>
+          </div>
+
+          <div class="mt-4">
+            <button type="submit" class="btn btn-primary px-4">
+              <i class="bi bi-check-circle me-2"></i>Save Settings
+            </button>
+            <button type="reset" class="btn btn-outline-secondary ms-2">
+              <i class="bi bi-arrow-clockwise me-2"></i>Reset
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <!-- Settings sidebar/info cards would go here -->
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-transparent border-0 py-3">
+        <h5 class="mb-0"><i class="bi bi-info-circle me-2 text-primary"></i>Settings Info</h5>
+      </div>
+      <div class="card-body">
+        <h6>Recognition Models</h6>
+        <p class="small text-muted">HOG: Faster, uses CPU. CNN: More accurate, requires GPU.</p>
+        
+        <h6>Tolerance</h6>
+        <p class="small text-muted">Lower values = stricter matching (0.1-0.9 range).</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Server Error - AI Attendance System{% endblock %}
+{% block page_title %}500 - Server Error{% endblock %}
+{% block page_subtitle %}Something went wrong on our end{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 text-center">
+        <div class="card border-0 shadow-lg">
+            <div class="card-body py-5">
+                <i class="bi bi-exclamation-octagon display-1 text-danger mb-3"></i>
+                <h2 class="display-4 fw-bold text-dark">500</h2>
+                <p class="lead mb-4">We're experiencing some technical difficulties. Please try again later.</p>
+                
+                <div class="d-grid gap-2 d-md-block">
+                    <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg me-2">
+                        <i class="bi bi-house me-2"></i>Back to Home
+                    </a>
+                    <button onclick="window.location.reload()" class="btn btn-outline-primary btn-lg">
+                        <i class="bi bi-arrow-clockwise me-2"></i>Try Again
+                    </button>
+                </div>
+                
+                <!-- Technical Details (for debugging) -->
+                <div class="mt-4 p-3 bg-light rounded text-start" style="display: none;" id="techDetails">
+                    <h6><i class="bi bi-bug me-2"></i>Technical Details</h6>
+                    <small class="text-muted">
+                        Error: Internal Server Error<br>
+                        Timestamp: {{ now.strftime('%Y-%m-%d %H:%M:%S') }}<br>
+                        Contact support if this issue persists.
+                    </small>
+                </div>
+                
+                <button class="btn btn-sm btn-outline-secondary mt-3" onclick="toggleTechDetails()">
+                    <i class="bi bi-code-slash me-1"></i>Show Technical Details
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleTechDetails() {
+    const details = document.getElementById('techDetails');
+    details.style.display = details.style.display === 'none' ? 'block' : 'none';
+}
+</script>
+{% endblock %}
