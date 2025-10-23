@@ -1,0 +1,792 @@
+register.htl v2
+
+{% extends "base.html" %}
+
+{% block title %}Register Student - AI Classroom Attendance System{% endblock %}
+{% block page_title %}Register New Student{% endblock %}
+{% block page_subtitle %}Add students to the system with advanced facial recognition technology{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-xl-10">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="mb-3">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <div class="card border-0 shadow-lg">
+      <div class="card-header bg-primary text-white py-4">
+        <div class="d-flex align-items-center justify-content-between">
+          <h3 class="mb-0"><i class="bi bi-person-plus me-2"></i>Student Registration Wizard</h3>
+          <span class="badge bg-light text-primary fs-6">Step <span id="currentStep">1</span> of 3</span>
+        </div>
+      </div>
+
+      <div class="card-body border-bottom">
+        <div class="progress" style="height: 8px;">
+          <div class="progress-bar bg-success" id="progressBar" style="width: 33%;" role="progressbar"></div>
+        </div>
+        <div class="d-flex justify-content-between mt-2">
+          <small class="text-muted">Basic Information</small>
+          <small class="text-muted">Photo Capture</small>
+          <small class="text-muted">Confirmation</small>
+        </div>
+      </div>
+
+      <div class="card-body p-0">
+        <form method="POST" action="{{ url_for('register') }}" enctype="multipart/form-data" id="registrationForm">
+
+          <!-- Step 1 -->
+          <div class="step-content active" id="step1">
+            <div class="row g-0">
+              <div class="col-md-8 p-5">
+                <h4 class="fw-bold mb-4"><i class="bi bi-person-badge text-primary me-2"></i>Student Details</h4>
+
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label for="name" class="form-label fw-semibold">Full Name <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                      <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+                      <input type="text" class="form-control form-control-lg" id="name" name="name" required 
+                             placeholder="Enter student's full name" minlength="2" maxlength="100">
+                    </div>
+                    <div class="form-text">Use official name as per university records</div>
+                  </div>
+
+                  <div class="col-md-6">
+                    <label for="roll_number" class="form-label fw-semibold">Roll Number <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                      <span class="input-group-text bg-light"><i class="bi bi-123"></i></span>
+                      <input type="text" class="form-control form-control-lg" id="roll_number" name="roll_number" required 
+                             placeholder="e.g., CS2023001" pattern="[A-Za-z0-9\-_]+" title="Alphanumeric characters, hyphens, and underscores only">
+                    </div>
+                    <div class="form-text">Must be unique across the system</div>
+                  </div>
+
+                  <div class="col-md-6">
+                    <label for="email" class="form-label fw-semibold">Email Address</label>
+                    <div class="input-group">
+                      <span class="input-group-text bg-light"><i class="bi bi-envelope"></i></span>
+                      <input type="email" class="form-control form-control-lg" id="email" name="email" 
+                             placeholder="student@university.edu">
+                    </div>
+                    <div class="form-text">Optional but recommended for notifications</div>
+                  </div>
+
+                  <div class="col-md-6">
+                    <label for="department" class="form-label fw-semibold">Department <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                      <span class="input-group-text bg-light"><i class="bi bi-building"></i></span>
+                      <select class="form-select form-control-lg" id="department" name="department" required>
+                        <option value="">Select Department</option>
+                        <option value="Computer Science">Computer Science</option>
+                        <option value="Electrical Engineering">Electrical Engineering</option>
+                        <option value="Mechanical Engineering">Mechanical Engineering</option>
+                        <option value="Civil Engineering">Civil Engineering</option>
+                        <option value="Business Administration">Business Administration</option>
+                        <option value="Mathematics">Mathematics</option>
+                        <option value="Physics">Physics</option>
+                        <option value="Chemistry">Chemistry</option>
+                        <option value="Biology">Biology</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="col-12 mt-4">
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" id="terms" required>
+                      <label class="form-check-label" for="terms">
+                        I confirm that I have obtained proper consent for storing this student's facial data in accordance with institutional privacy policies
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-md-4 bg-light p-5 d-flex align-items-center">
+                <div class="text-center w-100">
+                  <i class="bi bi-person-check display-1 text-primary mb-3"></i>
+                  <h5>Student Information</h5>
+                  <p class="text-muted">Fill in the basic details to create the student profile</p>
+                  <div class="tips mt-4 p-3 bg-white rounded">
+                    <h6><i class="bi bi-lightbulb text-warning me-2"></i>Tips:</h6>
+                    <ul class="list-unstyled small text-start">
+                      <li class="mb-2">✓ Use official name spelling</li>
+                      <li class="mb-2">✓ Roll number must be unique</li>
+                      <li class="mb-2">✓ Email is optional but recommended</li>
+                      <li class="mb-2">✓ Select the correct department</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card-footer bg-light py-3">
+              <div class="d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-secondary" disabled><i class="bi bi-arrow-left me-2"></i>Previous</button>
+                <button type="button" class="btn btn-primary" onclick="validateStep1()">Next: Photo Capture <i class="bi bi-arrow-right ms-2"></i></button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="step-content" id="step2">
+            <div class="row g-0">
+              <div class="col-md-8 p-5">
+                <h4 class="fw-bold mb-4"><i class="bi bi-camera text-primary me-2"></i>Capture Student Photo</h4>
+
+                <div class="alert alert-info mb-4">
+                  <i class="bi bi-info-circle me-2"></i>
+                  <strong>Photo Requirements:</strong> Clear front-facing photo with good lighting. Avoid glasses, hats, or facial obstructions.
+                </div>
+
+                <div class="row g-4">
+                  <div class="col-md-6">
+                    <div class="card h-100">
+                      <div class="card-header bg-success text-white"><i class="bi bi-camera-video me-2"></i>Live Camera</div>
+                      <div class="card-body text-center">
+                        <div id="cameraContainer" class="mb-3">
+                          <div id="cameraPlaceholder" class="camera-placeholder bg-dark rounded p-4 text-light">
+                            <i class="bi bi-camera-video display-4"></i>
+                            <p class="mt-2 mb-0">Camera feed will appear here</p>
+                          </div>
+                          <video id="video" width="100%" autoplay muted class="rounded d-none"></video>
+                          <canvas id="canvas" style="display: none;"></canvas>
+                        </div>
+                        <div class="btn-group w-100 mb-2">
+                          <button type="button" id="startCamera" class="btn btn-outline-primary"><i class="bi bi-camera-video me-2"></i>Start Camera</button>
+                          <button type="button" id="captureBtn" class="btn btn-success" disabled><i class="bi bi-camera me-2"></i>Capture</button>
+                        </div>
+                        <button type="button" id="retakeBtn" class="btn btn-outline-warning w-100 d-none"><i class="bi bi-arrow-repeat me-2"></i>Retake Photo</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="col-md-6">
+                    <div class="card h-100">
+                      <div class="card-header bg-info text-white"><i class="bi bi-upload me-2"></i>File Upload</div>
+                      <div class="card-body text-center">
+                        <div class="upload-area border-2 border-dashed rounded p-4 mb-3" id="uploadArea">
+                          <i class="bi bi-cloud-upload display-4 text-muted mb-2"></i>
+                          <p class="mb-2">Drag & drop a photo here</p>
+                          <small class="text-muted">or click to browse</small>
+                          <input type="file" id="image" name="image" accept="image/jpeg,image/png,image/webp" class="d-none">
+                        </div>
+                        <button type="button" class="btn btn-outline-info w-100 mb-2" onclick="document.getElementById('image').click()">
+                          <i class="bi bi-folder me-2"></i>Browse Files
+                        </button>
+                        <div class="file-info small text-muted" id="fileInfo">
+                          Max file size: 16MB • Supported: JPG, PNG, WebP
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Photo Quality Check -->
+                <div class="mt-4 p-3 bg-light rounded" id="photoQualitySection" style="display: none;">
+                  <h6 class="fw-bold mb-3"><i class="bi bi-graph-up text-primary me-2"></i>Photo Quality Check</h6>
+                  <div class="row g-2">
+                    <div class="col-md-6">
+                      <div class="d-flex align-items-center" id="faceCheck">
+                        <i class="bi bi-question-circle text-muted me-2"></i>
+                        <small>Face detection: <span class="fw-semibold">Pending</span></small>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="d-flex align-items-center" id="lightingCheck">
+                        <i class="bi bi-question-circle text-muted me-2"></i>
+                        <small>Lighting: <span class="fw-semibold">Pending</span></small>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="d-flex align-items-center" id="clarityCheck">
+                        <i class="bi bi-question-circle text-muted me-2"></i>
+                        <small>Image clarity: <span class="fw-semibold">Pending</span></small>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="d-flex align-items-center" id="angleCheck">
+                        <i class="bi bi-question-circle text-muted me-2"></i>
+                        <small>Face angle: <span class="fw-semibold">Pending</span></small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-md-4 bg-light p-5">
+                <div class="text-center">
+                  <i class="bi bi-camera2 display-1 text-primary mb-3"></i>
+                  <h5>Photo Preview</h5>
+                  <div id="imagePreview" class="mt-3">
+                    <div class="placeholder-preview bg-white rounded p-4 text-muted border">
+                      <i class="bi bi-person display-4"></i>
+                      <p class="mt-2 mb-0">Your photo will appear here</p>
+                    </div>
+                  </div>
+                  <div class="mt-3" id="photoStatus">
+                    <small class="text-muted">No photo selected</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card-footer bg-light py-3">
+              <div class="d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-secondary" onclick="prevStep(1)"><i class="bi bi-arrow-left me-2"></i>Previous</button>
+                <button type="button" class="btn btn-primary" id="step2Next" disabled>Next: Review <i class="bi bi-arrow-right ms-2"></i></button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="step-content" id="step3">
+            <div class="row g-0">
+              <div class="col-md-8 p-5">
+                <h4 class="fw-bold mb-4"><i class="bi bi-check-circle text-primary me-2"></i>Review & Confirm</h4>
+
+                <div class="card border-primary">
+                  <div class="card-header bg-primary text-white"><i class="bi bi-person-check me-2"></i>Student Profile Summary</div>
+                  <div class="card-body">
+                    <div class="row">
+                      <div class="col-md-8">
+                        <table class="table table-borderless">
+                          <tr><td class="fw-semibold" width="30%">Name:</td><td id="reviewName">-</td></tr>
+                          <tr><td class="fw-semibold">Roll Number:</td><td id="reviewRoll">-</td></tr>
+                          <tr><td class="fw-semibold">Email:</td><td id="reviewEmail">-</td></tr>
+                          <tr><td class="fw-semibold">Department:</td><td id="reviewDept">-</td></tr>
+                          <tr><td class="fw-semibold">Photo Quality:</td><td><span id="photoQuality" class="badge bg-warning">Pending</span></td></tr>
+                        </table>
+                      </div>
+                      <div class="col-md-4 text-center">
+                        <div id="reviewPhoto" class="border rounded p-2 bg-white">
+                          <img src="" alt="Student Photo Preview" class="img-fluid rounded" style="max-height: 120px; display: none;">
+                          <div class="text-muted">No photo selected</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="alert alert-warning mt-4">
+                  <i class="bi bi-exclamation-triangle me-2"></i>
+                  <strong>Important:</strong> Please verify all information before submitting. Once registered, the student will be added to the facial recognition database.
+                </div>
+
+                <!-- Loading State -->
+                <div class="text-center mt-4" id="submissionLoading" style="display: none;">
+                  <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Processing...</span>
+                  </div>
+                  <p class="mt-2 text-muted">Processing registration and training AI model...</p>
+                </div>
+              </div>
+
+              <div class="col-md-4 bg-light p-5">
+                <div class="text-center">
+                  <i class="bi bi-check-circle display-1 text-success mb-3"></i>
+                  <h5>Ready to Register</h5>
+                  <p class="text-muted">Review all information before submitting</p>
+                  <div class="quick-stats mt-4">
+                    <div class="d-flex justify-content-between mb-2"><span>Database Status:</span><span class="badge bg-success" id="dbStatus">Ready</span></div>
+                    <div class="d-flex justify-content-between mb-2"><span>Model Training:</span><span class="badge bg-success" id="modelStatus">Ready</span></div>
+                    <div class="d-flex justify-content-between"><span>Storage Available:</span><span class="badge bg-success" id="storageStatus">Adequate</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card-footer bg-light py-3">
+              <div class="d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-secondary" onclick="prevStep(2)"><i class="bi bi-arrow-left me-2"></i>Previous</button>
+                <button type="submit" class="btn btn-success btn-lg" id="submitBtn">
+                  <i class="bi bi-person-plus me-2"></i>Complete Registration
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </form>
+      </div>
+    </div>
+
+    <div class="card mt-4 border-0 shadow-sm">
+      <div class="card-body text-center py-4">
+        <h5 class="mb-3">Need to register multiple students?</h5>
+        <p class="text-muted mb-3">Contact system administrator for bulk registration options</p>
+        <button class="btn btn-outline-primary me-2" disabled><i class="bi bi-upload me-2"></i>Bulk Upload CSV</button>
+        <button class="btn btn-outline-secondary" disabled><i class="bi bi-download me-2"></i>Download Template</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.step-content {
+  display: none;
+}
+
+.step-content.active {
+  display: block;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.camera-placeholder {
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.upload-area {
+  border-style: dashed !important;
+  border-color: #dee2e6;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.upload-area:hover, .upload-area.dragover {
+  border-color: #198754 !important;
+  background-color: #f8f9fa;
+}
+
+.placeholder-preview {
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Quality check icons */
+.bi-check-circle-fill { color: #198754; }
+.bi-x-circle-fill { color: #dc3545; }
+.bi-exclamation-triangle-fill { color: #ffc107; }
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .card-body.p-5 {
+    padding: 2rem !important;
+  }
+  
+  .bg-light.p-5 {
+    padding: 2rem !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .card-body.p-5 {
+    padding: 1.5rem !important;
+  }
+  
+  .btn-lg {
+    padding: 0.75rem 1.5rem;
+  }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentStep = 1;
+let stream = null;
+let capturedImage = null;
+let isPhotoValid = false;
+
+// Step Navigation
+function nextStep(step) {
+  if (validateStep(currentStep)) {
+    document.getElementById(`step${currentStep}`).classList.remove('active');
+    document.getElementById(`step${step}`).classList.add('active');
+    currentStep = step;
+    updateProgress();
+  }
+}
+
+function prevStep(step) {
+  document.getElementById(`step${currentStep}`).classList.remove('active');
+  document.getElementById(`step${step}`).classList.add('active');
+  currentStep = step;
+  updateProgress();
+}
+
+function updateProgress() {
+  const progress = (currentStep / 3) * 100;
+  document.getElementById('progressBar').style.width = `${progress}%`;
+  document.getElementById('currentStep').textContent = currentStep;
+}
+
+// Step Validation
+function validateStep1() {
+  const name = document.getElementById('name').value.trim();
+  const roll = document.getElementById('roll_number').value.trim();
+  const dept = document.getElementById('department').value;
+  const terms = document.getElementById('terms').checked;
+
+  if (!name) {
+    showAlert('Please enter the student\'s full name.', 'warning');
+    document.getElementById('name').focus();
+    return false;
+  }
+
+  if (!roll) {
+    showAlert('Please enter a roll number.', 'warning');
+    document.getElementById('roll_number').focus();
+    return false;
+  }
+
+  if (!dept) {
+    showAlert('Please select a department.', 'warning');
+    document.getElementById('department').focus();
+    return false;
+  }
+
+  if (!terms) {
+    showAlert('Please confirm that you have obtained proper consent for facial data storage.', 'warning');
+    return false;
+  }
+
+  // Validate roll number format
+  const rollPattern = /^[A-Za-z0-9\-_]+$/;
+  if (!rollPattern.test(roll)) {
+    showAlert('Roll number can only contain letters, numbers, hyphens, and underscores.', 'warning');
+    return false;
+  }
+
+  nextStep(2);
+  return true;
+}
+
+function validateStep(step) {
+  switch(step) {
+    case 1:
+      return validateStep1();
+    case 2:
+      if (!capturedImage && !document.getElementById('image').files.length) {
+        showAlert('Please capture or upload a student photo before continuing.', 'warning');
+        return false;
+      }
+      if (!isPhotoValid) {
+        showAlert('Please ensure the photo meets quality requirements before continuing.', 'warning');
+        return false;
+      }
+      updateReview();
+      return true;
+    default:
+      return true;
+  }
+}
+
+// Camera Functionality
+document.getElementById('startCamera').addEventListener('click', async function() {
+  try {
+    const isSecure = window.isSecureContext || ['localhost', '127.0.0.1'].includes(window.location.hostname);
+    
+    if (!isSecure) {
+      showAlert('Camera access requires HTTPS or localhost for security reasons. Please use file upload instead.', 'warning');
+      this.disabled = true;
+      this.innerHTML = '<i class="bi bi-camera-video-off me-2"></i>Camera Unavailable';
+      return;
+    }
+
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+        facingMode: 'user'
+      },
+      audio: false
+    });
+
+    const video = document.getElementById('video');
+    const placeholder = document.getElementById('cameraPlaceholder');
+    
+    video.srcObject = stream;
+    video.classList.remove('d-none');
+    placeholder.classList.add('d-none');
+    
+    document.getElementById('captureBtn').disabled = false;
+    this.disabled = true;
+    this.innerHTML = '<i class="bi bi-camera-video-fill me-2"></i>Camera Active';
+    this.classList.remove('btn-outline-primary');
+    this.classList.add('btn-success');
+
+  } catch (error) {
+    console.error('Camera access error:', error);
+    showAlert('Unable to access camera. Please check permissions and try again, or use file upload.', 'danger');
+  }
+});
+
+document.getElementById('captureBtn').addEventListener('click', function() {
+  const video = document.getElementById('video');
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  
+  canvas.toBlob(function(blob) {
+    capturedImage = blob;
+    displayImagePreview(blob);
+    validatePhotoQuality(blob);
+    document.getElementById('retakeBtn').classList.remove('d-none');
+  }, 'image/jpeg', 0.9);
+});
+
+// Retake Photo
+document.getElementById('retakeBtn').addEventListener('click', function() {
+  capturedImage = null;
+  document.getElementById('image').value = '';
+  document.getElementById('retakeBtn').classList.add('d-none');
+  document.getElementById('step2Next').disabled = true;
+  document.getElementById('photoQualitySection').style.display = 'none';
+  document.getElementById('photoStatus').innerHTML = '<small class="text-muted">No photo selected</small>';
+  isPhotoValid = false;
+  
+  // Reset preview
+  document.getElementById('imagePreview').innerHTML = `
+    <div class="placeholder-preview bg-white rounded p-4 text-muted border">
+      <i class="bi bi-person display-4"></i>
+      <p class="mt-2 mb-0">Your photo will appear here</p>
+    </div>
+  `;
+});
+
+// File Upload Handling
+document.getElementById('image').addEventListener('change', function() {
+  if (this.files.length > 0) {
+    const file = this.files[0];
+    
+    // Validate file size (16MB max)
+    if (file.size > 16 * 1024 * 1024) {
+      showAlert('File size too large. Please select an image under 16MB.', 'warning');
+      this.value = '';
+      return;
+    }
+    
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      showAlert('Please select a valid image file (JPG, PNG, or WebP).', 'warning');
+      this.value = '';
+      return;
+    }
+    
+    displayImagePreview(file);
+    validatePhotoQuality(file);
+    capturedImage = null;
+    document.getElementById('retakeBtn').classList.add('d-none');
+  }
+});
+
+// Drag and Drop
+const uploadArea = document.getElementById('uploadArea');
+uploadArea.addEventListener('dragover', function(e) {
+  e.preventDefault();
+  this.classList.add('dragover');
+});
+
+uploadArea.addEventListener('dragleave', function(e) {
+  e.preventDefault();
+  this.classList.remove('dragover');
+});
+
+uploadArea.addEventListener('drop', function(e) {
+  e.preventDefault();
+  this.classList.remove('dragover');
+  
+  const files = e.dataTransfer.files;
+  if (files.length && files[0].type.startsWith('image/')) {
+    document.getElementById('image').files = files;
+    document.getElementById('image').dispatchEvent(new Event('change'));
+  } else {
+    showAlert('Please drop a valid image file.', 'warning');
+  }
+});
+
+uploadArea.addEventListener('click', function() {
+  document.getElementById('image').click();
+});
+
+// Image Preview
+function displayImagePreview(file) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const preview = document.getElementById('imagePreview');
+    preview.innerHTML = `
+      <img src="${e.target.result}" class="img-fluid rounded shadow" style="max-height: 200px;">
+      <div class="mt-2"><small class="text-muted">Photo preview - Ready for validation</small></div>
+    `;
+  };
+  reader.readAsDataURL(file);
+}
+
+// Photo Quality Validation (Simplified - in real implementation, this would use face detection API)
+function validatePhotoQuality(file) {
+  document.getElementById('photoQualitySection').style.display = 'block';
+  
+  // Simulate quality checks (in real implementation, this would be actual face detection)
+  setTimeout(() => {
+    // Simulate face detection
+    updateQualityCheck('faceCheck', true, 'Face detected');
+    
+    // Simulate lighting check
+    updateQualityCheck('lightingCheck', true, 'Good lighting');
+    
+    // Simulate clarity check
+    updateQualityCheck('clarityCheck', true, 'Clear image');
+    
+    // Simulate angle check
+    updateQualityCheck('angleCheck', true, 'Front-facing');
+    
+    isPhotoValid = true;
+    document.getElementById('step2Next').disabled = false;
+    document.getElementById('photoStatus').innerHTML = '<small class="text-success"><i class="bi bi-check-circle-fill me-1"></i>Photo meets requirements</small>';
+    
+  }, 1500);
+}
+
+function updateQualityCheck(elementId, passed, message) {
+  const element = document.getElementById(elementId);
+  const icon = passed ? 'bi-check-circle-fill' : 'bi-x-circle-fill';
+  const color = passed ? 'text-success' : 'text-danger';
+  
+  element.innerHTML = `
+    <i class="bi ${icon} ${color} me-2"></i>
+    <small>${message}</small>
+  `;
+}
+
+// Review Step
+function updateReview() {
+  document.getElementById('reviewName').textContent = document.getElementById('name').value || '-';
+  document.getElementById('reviewRoll').textContent = document.getElementById('roll_number').value || '-';
+  document.getElementById('reviewEmail').textContent = document.getElementById('email').value || 'Not provided';
+  document.getElementById('reviewDept').textContent = document.getElementById('department').value || '-';
+  
+  const reviewPhoto = document.getElementById('reviewPhoto');
+  const imgEl = reviewPhoto.querySelector('img');
+  let file = capturedImage || (document.getElementById('image').files[0] || null);
+  
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      imgEl.src = e.target.result;
+      imgEl.style.display = 'block';
+      const textElement = reviewPhoto.querySelector('.text-muted');
+      if (textElement) textElement.style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  }
+  
+  document.getElementById('photoQuality').textContent = isPhotoValid ? 'Meets Requirements' : 'Needs Improvement';
+  document.getElementById('photoQuality').className = `badge ${isPhotoValid ? 'bg-success' : 'bg-warning'}`;
+}
+
+// Form Submission
+document.getElementById('registrationForm').addEventListener('submit', function(e) {
+  const fileInput = document.getElementById('image');
+  
+  // Ensure image is attached if using camera capture
+  if (!fileInput.files.length && capturedImage) {
+    const file = new File([capturedImage], 'captured.jpg', { type: 'image/jpeg' });
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    fileInput.files = dt.files;
+  }
+  
+  // Show loading state
+  document.getElementById('submitBtn').disabled = true;
+  document.getElementById('submitBtn').innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Processing...';
+  document.getElementById('submissionLoading').style.display = 'block';
+});
+
+// Step 2 Next Button
+document.getElementById('step2Next').addEventListener('click', function() {
+  const fileInput = document.getElementById('image');
+  const hasFile = fileInput && fileInput.files && fileInput.files.length > 0;
+  const hasCapture = capturedImage instanceof Blob;
+  
+  if (!hasFile && !hasCapture) {
+    showAlert('Please capture or upload a student photo before continuing.', 'warning');
+    return;
+  }
+  
+  if (!hasFile && hasCapture) {
+    const file = new File([capturedImage], 'captured.jpg', { type: 'image/jpeg' });
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    fileInput.files = dt.files;
+  }
+  
+  updateReview();
+  nextStep(3);
+});
+
+// Utility Functions
+function showAlert(message, type) {
+  const alertDiv = document.createElement('div');
+  alertDiv.className = `alert alert-${type} alert-dismissible fade show mt-3`;
+  alertDiv.innerHTML = `
+    <i class="bi ${getAlertIcon(type)} me-2"></i>${message}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  `;
+  
+  const container = document.querySelector('.col-xl-10');
+  container.prepend(alertDiv);
+  
+  setTimeout(() => {
+    if (alertDiv.parentNode) {
+      alertDiv.remove();
+    }
+  }, 5000);
+}
+
+function getAlertIcon(type) {
+  const icons = {
+    success: 'bi-check-circle-fill',
+    danger: 'bi-exclamation-triangle-fill',
+    warning: 'bi-exclamation-triangle',
+    info: 'bi-info-circle-fill'
+  };
+  return icons[type] || 'bi-info-circle-fill';
+}
+
+// Cleanup
+window.addEventListener('beforeunload', function() {
+  if (stream) {
+    stream.getTracks().forEach(track => track.stop());
+  }
+});
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+  updateProgress();
+});
+</script>
+{% endblock %}

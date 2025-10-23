@@ -1,0 +1,28 @@
+# Core
+flask==2.3.3
+werkzeug==2.3.7
+
+# Security
+flask-wtf==1.1.1
+wtforms==3.0.1
+flask-limiter==3.3.0
+
+# Database
+flask-sqlalchemy==3.0.5
+flask-migrate==4.0.5
+
+# Computer Vision
+numpy==1.25.0          # Latest compatible with Python 3.11
+opencv-python==4.8.1.78
+pillow==10.0.1
+
+# Production Server
+gunicorn==21.2.0
+
+# Utilities
+blinker==1.6.3
+
+# Notes:
+# dlib and face-recognition are installed manually for Python 3.11 via precompiled wheels.
+# pip install path\to\dlib‑19.24.2‑cp311‑cp311‑win_amd64.whl
+# pip install path\to\face_recognition‑1.5.0‑cp311‑cp311‑win_amd64.whl
